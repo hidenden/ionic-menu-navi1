@@ -1,4 +1,6 @@
 import { Injectable } from '@angular/core';
+import { NgZone } from '@angular/core';
+import { Router } from '@angular/router';
 import { Push, PushObject, PushOptions } from '@ionic-native/push/ngx';
 
 @Injectable({
@@ -9,9 +11,12 @@ export class PushService {
   registrationType: string;
   badge: number = 0;
   pushObject: PushObject;
+  url: string[]|null = null;
 
   constructor(
     private push: Push,
+    private router: Router,
+    private ngZone: NgZone,
   ) { }
 
   initialize() {
@@ -28,6 +33,7 @@ export class PushService {
       windows: {}
     }
     this.pushObject = this.push.init(options);
+    this.url = ['folder', 'Index'];
 
     this.preparePushNotification();
 
@@ -85,13 +91,13 @@ export class PushService {
   }
 
   private pushNavigation(): void {
-    console.log('Navigate to folder/Index');
-    /* 
-    this.ngZone.run(() => {
-      this.router.navigate(['folder', 'Inbox']);
-    });
-    */
-   this.setBadge(0);
+    console.log('Navigate by Push Notification');
+    if (this.url != null) {
+      this.ngZone.run(() => {
+        this.router.navigate(this.url);
+      });
+    }
+    this.setBadge(0);
   }
 
   getToken(): string{
