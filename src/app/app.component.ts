@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, NgZone } from '@angular/core';
+import { Router } from '@angular/router';
 
 import { Platform } from '@ionic/angular';
 import { SplashScreen } from '@ionic-native/splash-screen/ngx';
@@ -51,6 +52,8 @@ export class AppComponent implements OnInit {
     private splashScreen: SplashScreen,
     private statusBar: StatusBar,
     private push: Push,
+    private router: Router,
+    private ngZone: NgZone,
   ) {
     this.initializeApp();
   }
@@ -99,6 +102,13 @@ export class AppComponent implements OnInit {
     });
   }
 
+  pushNavigation() {
+    console.log('Navigate to folder/Index');
+    this.ngZone.run(() => {
+      this.router.navigate(['folder', 'Inbox']);
+    });
+  }
+
   preparePushNotification(pushObject: PushObject) {
     pushObject.on('registration').subscribe((data: any) => {
       console.log('device token -> ' + data.registrationId);
@@ -113,7 +123,8 @@ export class AppComponent implements OnInit {
         console.log('Received in foreground');
       } else if (data.additionalData.coldstart) {
         console.log('Push notification clicked');
-        console.log('ADD NAVIGATION HERE');
+        this.pushNavigation();
+        // console.log('ADD NAVIGATION HERE');
       } else {
         console.log('App returned from background');
       }
