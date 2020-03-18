@@ -74,6 +74,15 @@ export class AppComponent implements OnInit {
       console.warn('Push notifications not initialized.  Run in physical device');
       return;
     }
-    this.pushService.initialize();
+    this.pushService.setUrlProvider((data) => {
+      if (data.additionalData) {
+        if (data.additionalData.page) {
+          return ['folder', data.additionalData.page];
+        }
+      }
+      return ['folder', 'Index'];
+    });
+    this.pushService.setAutoClearBadge(true);
+    this.pushService.activate();
   }
 }

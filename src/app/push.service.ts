@@ -11,15 +11,17 @@ export class PushService {
   registrationType: string;
   badge: number = 0;
   pushObject: PushObject;
-  url: string[]|null = null;
-
+  notificationData: any|null = null;
+  isAutoClearBadge = false;
+  urlProvider : (data:any) => string[] | null = null;
+  
   constructor(
     private push: Push,
     private router: Router,
     private ngZone: NgZone,
   ) { }
 
-  initialize() {
+  activate() {
     const options: PushOptions = {
       android: {
         senderID: 'SomeSenderID',
@@ -33,7 +35,6 @@ export class PushService {
       windows: {}
     }
     this.pushObject = this.push.init(options);
-    this.url = ['folder', 'Index'];
 
     this.preparePushNotification();
 
@@ -54,16 +55,15 @@ export class PushService {
     });
 
     this.pushObject.on('notification').subscribe((data: any) => {
-      console.log('message -> ' + data.message);
-      // if user using app and push notification comes
+      this.notificationData = data;
       this.refreshBadge();
 
-      if (data.additionalData.foreground) {
-        this.foregroundAction(data);
-      } else if (data.additionalData.coldstart) {
-        this.coldstartAction(data);
+      if (this.notificationData.additionalData.foreground) {
+        this.foregroundAction();
+      } else if (this.notificationData.additionalData.coldstart) {
+        this.coldstartAction();
       } else {
-        this.frombackgroundAction(data);
+        this.frombackgroundAction();
       }
     });
 
@@ -72,18 +72,21 @@ export class PushService {
     });
   }
 
-  private foregroundAction(data: any): void {
+  private foregroundAction(): void {
     console.log('Received in foreground');
+    console.log('message -> ' + this.notificationData.message);
   }
 
-  private coldstartAction(data: any): void {
+  private coldstartAction(): void {
     console.log('Push notification clicked');
+    console.log('message -> ' + this.notificationData.message);
     this.pushNavigation();
     // console.log('ADD NAVIGATION HERE');
   }
 
-  private frombackgroundAction(data: any): void {
+  private frombackgroundAction(): void {
     console.log('App returned from background');
+    console.log('message -> ' + this.notificationData.message);
   }
 
   private errorAction(error: any) : void {
@@ -91,13 +94,15 @@ export class PushService {
   }
 
   private pushNavigation(): void {
-    console.log('Navigate by Push Notification');
-    if (this.url != null) {
+    if (this.urlProvider) {
+      console.log('Navigate by Push Notification');
       this.ngZone.run(() => {
-        this.router.navigate(this.url);
+        this.router.navigate(this.urlProvider(this.notificationData));
       });
     }
-    this.setBadge(0);
+    if (this.isAutoClearBadge) {
+      this.clearBadge();
+    }
   }
 
   getToken(): string{
@@ -134,6 +139,18 @@ export class PushService {
 
   clearBadge(): void {
     this.setBadge(0);
+  }
+
+  getNotificationData(): any|null {
+    return this.notificationData;
+  }
+
+  setUrlProvider(fn:(data:any) => string[] | null) {
+    this.urlProvider = fn;
+  }
+
+  setAutoClearBadge(flag: boolean) {
+    this.isAutoClearBadge = flag;
   }
 
 }
